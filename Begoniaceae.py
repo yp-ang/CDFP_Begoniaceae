@@ -67,8 +67,7 @@ if __name__ == '__main__':
 
     excel = xlsxwriter.Workbook(r"C:\Users\angyu\Desktop\Begoniaceae.xlsx")
     excelsheet = excel.add_worksheet("Begonias")
-    excelsheet.write(0, 0, "Epithet")
-    excelsheet.write(0, 2, "Authority")
+
 
 
     row = 0
@@ -118,14 +117,10 @@ if __name__ == '__main__':
         species_authority = species_authority.rstrip(",")
         excelsheet.write(row, 1, species_authority)
 
-
-
-
-
-
         row += 1
 
-
+    excelsheet.write(0, 0, "Epithet")
+    excelsheet.write(0, 1, "Authority")
     excel.close()
 
 
