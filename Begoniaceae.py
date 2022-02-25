@@ -50,9 +50,6 @@ if __name__ == '__main__':
         f.write(" ")
         f.close()
 
-    excel = xlsxwriter.Workbook(r"C:\Users\angyu\Desktop\Begoniaceae.xlsx")
-    excelsheet = excel.add_worksheet("Begonias")
-    row = 0
 
     start_index = find_start(lines, Genus+" ")
     for i in range(start_index, fileLength):
@@ -63,12 +60,70 @@ if __name__ == '__main__':
             elif line.split()[0] == "Begonia":
                 edited_line = "\n" + line.lstrip() + " "
                 write_line(filepath, edited_line)
-                excelsheet.write(row, 0, line.lstrip())
-                row += 1
+
             else:
                 edited_line = line.lstrip().rstrip()
                 write_line(filepath, edited_line )
 
+    excel = xlsxwriter.Workbook(r"C:\Users\angyu\Desktop\Begoniaceae.xlsx")
+    excelsheet = excel.add_worksheet("Begonias")
+    excelsheet.write(0, 0, "Epithet")
+    excelsheet.write(0, 2, "Authority")
+
+
+    row = 0
+
+    textfile = open(filepath, 'r',  encoding='utf-8')
+    all_lines = textfile.readlines()
+    for species in all_lines:
+        components = species.split(" ")
+
+
+        bracket_index = 0
+        multiple_author = 0
+        author_index = 0
+        first_author_index = 0
+        for words in components:
+            if words == "×":
+                components[1:3] = [' '.join(components[1:3])]
+
+            if "(1" in words or "(2" in words:
+                bracket_index = components.index(words)
+                break
+        excelsheet.write(row, 0, components[1])
+
+        for i in range(2, bracket_index):
+            if components[i] == "&":
+                multiple_author = 1
+                author_index = i
+
+        for j in range(author_index,bracket_index):
+            if "," in components[j]:
+                author_index = j
+
+        for k in range(2, bracket_index):
+            if "," in components[k]:
+                first_author_index = k
+                break
+
+        species_authority = ""
+        if multiple_author == 1:
+            for i in range(2,author_index+1):
+                species_authority += (" " + components[i])
+
+        else: #single author
+            for i in range(2,first_author_index+1):
+                species_authority += (" " + components[i])
+
+        species_authority = species_authority.rstrip(",")
+        excelsheet.write(row, 1, species_authority)
+
+
+
+
+
+
+        row += 1
 
 
     excel.close()
