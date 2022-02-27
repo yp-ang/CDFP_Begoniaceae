@@ -1,38 +1,11 @@
 from urllib.request import Request, urlopen
-from io import StringIO
-from html.parser import HTMLParser
+from bs4 import BeautifulSoup
 import xlsxwriter
 
-class MLStripper(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.reset()
-        self.strict = False
-        self.convert_charrefs= True
-        self.text = StringIO()
-    def handle_data(self, d):
-        self.text.write(d)
-    def get_data(self):
-        return self.text.getvalue()
-
-def strip_tags(html):
-    s = MLStripper()
-    s.feed(html)
-    return s.get_data()
-
-def find_start(lines, substring):
-    for i in range(0, fileLength):
-        line = lines[i]
-        if substring in line:
-            break
-    return i
-def write_line(filepath, content):
-    with open(filepath, 'a', encoding="utf-8") as f:
-        f.write(content)
-
-#def function(filepath, line):
-
-
+def remove_all_tag(tag, soup):
+    tags = soup.findAll(tag)
+    for match in tags:
+        match.decompose()
 
 if __name__ == '__main__':
 
@@ -41,94 +14,104 @@ if __name__ == '__main__':
     Genus = "Begonia"
     filepath = r"C:\Users\angyu\Desktop\Begoniaceae.txt"
 
-    web_byte = urlopen(req).read()
-    webpage = strip_tags(web_byte.decode('latin-1'))
-    lines = webpage.split("\n")
-    fileLength = len(lines)
-
-    with open(filepath, 'w') as f:
-        f.write(" ")
-        f.close()
-
-
-    start_index = find_start(lines, Genus+" ")
-    for i in range(start_index, fileLength):
-        line = lines[i]
-        if (line.strip() != ""):
-            if Genus + " Resource" in line:
-                break
-            elif line.split()[0] == "Begonia":
-                edited_line = "\n" + line.lstrip() + " "
-                write_line(filepath, edited_line)
-
-            else:
-                edited_line = line.lstrip().rstrip()
-                write_line(filepath, edited_line )
-
     excel = xlsxwriter.Workbook(r"C:\Users\angyu\Desktop\Begoniaceae.xlsx")
     excelsheet = excel.add_worksheet("Begonias")
 
 
+    web_byte = urlopen(req).read()
+    web_content  = BeautifulSoup(web_byte, "html.parser")
+    species_content = web_content.find_all("li")
 
+    #extracting species name
+    species_list = []
+    species_name = ""
     row = 0
+    for species in species_content:
+        if species != None:
 
-    textfile = open(filepath, 'r',  encoding='utf-8')
-    all_lines = textfile.readlines()
-    for species in all_lines:
-        components = species.split(" ")
+            em = species.find("em")
+            i = species.find("i")
+            span = species.find("span")
+
+            if species.find("em") != None:
+                species_name = em.string
+            elif species.find("i") != None:
+                species_name = i.string
+            elif species.find("span") != None:
+                species_name = span.string
+
+        if species_name != None:
+            species_name.find("em")
+            if species_name:
+                species_name = species_name.string
+            species_list.append(species_name)
+            print(species_name)
+
+    # extracting contents:
+        if species != None:
+            remove_all_tag("span", species)
+            remove_all_tag("em", species)
+            remove_all_tag("i", species)
+            remove_all_tag("a", species)
+
+            text = str(species.get_text())
 
 
-        bracket_index = 0
-        multiple_author = 0
-        author_index = 0
-        first_author_index = 0
-        for words in components:
-            if words == "×":
-                components[1:3] = [' '.join(components[1:3])]
+            if "None" not in text:
+                text = text.replace("\n", "")
+                text = text.replace("\t", "")
+                text = text.replace("   ", "")
+                text = text.replace("  ", " ")
+                text = text.lstrip(" ")
 
-            if "(1" in words or "(2" in words:
-                bracket_index = components.index(words)
-                break
-        excelsheet.write(row, 0, components[1])
+                components = list(map(str,text.split(" ")))
 
-        for i in range(2, bracket_index):
-            if components[i] == "&":
-                multiple_author = 1
-                author_index = i
+                bracket_index = 0
+                multiple_author = 0
+                author_index = 0
+                first_author_index = 0
+                author_index_t = 0
+                mai = 0
 
-        for j in range(author_index,bracket_index):
-            if "," in components[j]:
-                author_index = j
+                for words in components:
+                    if "(1" in words or "(2" in words:
+                            bracket_index = components.index(words)
+                            break
 
-        for k in range(2, bracket_index):
-            if "," in components[k]:
-                first_author_index = k
-                break
+                for i in range(0, bracket_index+1):
+                    if components[i] == "&":
+                        multiple_author = 1
+                        and_index = i
+                        break
 
-        species_authority = ""
-        if multiple_author == 1:
-            for i in range(2,author_index+1):
-                species_authority += (" " + components[i])
+                for j in range(mai, bracket_index):
+                            if "," in components[j]:
+                                author_index = j
 
-        else: #single author
-            for i in range(2,first_author_index+1):
-                species_authority += (" " + components[i])
+                for k in range(0, bracket_index):
+                    if "," in components[k]:
+                        first_author_index = k
+                        break
 
-        species_authority = species_authority.rstrip(",")
-        excelsheet.write(row, 1, species_authority)
+                species_authority = ""
+                if multiple_author == 1:
+                    for i in range(0,author_index+1):
+                        species_authority += (" " + components[i])
 
-        row += 1
+                if multiple_author ==0:
+                    for i in range(0,first_author_index+1):
+                        species_authority += (" " + components[i])
 
-    excelsheet.write(0, 0, "Epithet")
-    excelsheet.write(0, 1, "Authority")
+                species_authority = species_authority.lstrip().rstrip(",")
+                #print(author_index)
+                print(species_authority)
+                excelsheet.write(row, 0, species_name)
+                excelsheet.write(row, 1, species_authority)
+                row+=1
+
+
+
     excel.close()
-
-
-
-
-
-
-
-
-
+    num_of_species = len(species_list)
+    print(num_of_species)
 
