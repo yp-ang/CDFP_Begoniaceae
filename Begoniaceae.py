@@ -74,19 +74,19 @@ if __name__ == '__main__':
                 mai = 0
 
                 for words in components:
-                    if "(1" in words or "(2" in words:
-                            bracket_index = components.index(words)
-                            break
+                    if "(17" in words or "(18" in words or "(19" in words or "(20" in words:
+                        bracket_index = components.index(words)
+                        break
 
-                for i in range(0, bracket_index+1):
+                for i in range(0, bracket_index):
                     if components[i] == "&":
                         multiple_author = 1
                         and_index = i
                         break
 
                 for j in range(mai, bracket_index):
-                            if "," in components[j]:
-                                author_index = j
+                    if "," in components[j]:
+                        author_index = j
 
                 for k in range(0, bracket_index):
                     if "," in components[k]:
@@ -102,11 +102,40 @@ if __name__ == '__main__':
                     for i in range(0,first_author_index+1):
                         species_authority += (" " + components[i])
 
+
+
+                ## Type detail
+
+                Type_index = 0
+                End_of_Type_index = 0
+                Type_present = 0
+                Type_Info = ""
+                print(components)
+                for words in components:
+                    if "--Type:" in words:
+                        Type_index = components.index(words)
+                        Type_present = 1
+                        break
+                if Type_present == 1:
+                    for i in range(Type_index, len(components)):
+                        if "." in components[i]:
+                            End_of_Type_index = i
+
+                            break
+                if Type_present == 1:
+                    for i in range(Type_index+1, End_of_Type_index+1):
+                        Type_Info += (" " + components[i])
+                else:
+                    Type_Info = "No Type Found"
+
+                print(Type_Info)
                 species_authority = species_authority.lstrip().rstrip(",")
-                #print(author_index)
-                print(species_authority)
+                Year_Published = int(components[bracket_index].lstrip("(").rstrip(")"))
+
                 excelsheet.write(row, 0, species_name)
                 excelsheet.write(row, 1, species_authority)
+                excelsheet.write(row, 2, Year_Published)
+                excelsheet.write(row, 3, Type_Info)
                 row+=1
 
 
